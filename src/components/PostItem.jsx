@@ -100,7 +100,7 @@ export default function PostItem({ post, currentUser, onEdit, onDelete, onLike, 
           {post.comments?.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {post.comments.map(comment => {
-                const isCommentOwner = currentUser && comment.user_id === currentUser.id;
+                const isCommentOwner = currentUser && (String(comment.user_id) === String(currentUser.id));
                 
                 return (
                   <div key={comment.id} style={{ display: 'flex', gap: '0.75rem', backgroundColor: 'var(--surface-color)', padding: '0.75rem', borderRadius: '8px' }}>
@@ -120,12 +120,12 @@ export default function PostItem({ post, currentUser, onEdit, onDelete, onLike, 
                           </span>
                         </div>
                         {isCommentOwner && (
-                           <div style={{ display: 'flex', gap: '0.5rem' }}>
-                             <button onClick={() => { setEditingCommentId(comment.id); setEditCommentText(comment.content); }} className="btn-icon" style={{ padding: '0.25rem' }} title="Edit Comment">
-                               <Edit2 size={14} />
+                           <div style={{ display: 'flex', gap: '0.75rem', marginLeft: 'auto' }}>
+                             <button onClick={() => { setEditingCommentId(comment.id); setEditCommentText(comment.content); }} className="btn-icon" style={{ padding: '0.25rem', color: 'var(--primary-color)' }} title="Edit Comment">
+                               <Edit2 size={16} />
                              </button>
-                             <button onClick={() => onDeleteComment(post.id, comment.id)} className="btn-icon danger" style={{ padding: '0.25rem' }} title="Delete Comment">
-                               <Trash2 size={14} />
+                             <button onClick={() => onDeleteComment(post.id, comment.id)} className="btn-icon danger" style={{ padding: '0.25rem', color: 'var(--danger-color)' }} title="Delete Comment">
+                               <Trash2 size={16} />
                              </button>
                            </div>
                         )}
