@@ -275,14 +275,22 @@ function App() {
   };
 
   const handleEditComment = async (postId, commentId, newContent) => {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('comments')
       .update({ content: newContent })
-      .eq('id', commentId);
+      .eq('id', commentId)
+      .select();
 
     if (error) {
       console.error("Error editing comment:", error);
-      alert("Error editing comment");
+      alert("Error editing comment: " + error.message);
+      return;
+    }
+    
+    // Supabase RLS silently blocks updates by returning empty arrays if unauthorized
+    if (!data || data.length === 0) {
+      console.error("RLS blocked editing comment.");
+      alert("Access Denied: The database blocked your edit. If you are using a mock/legacy login, you must update your Supabase Row-Level Security Rules.");
       return;
     }
 
@@ -300,14 +308,22 @@ function App() {
   const handleDeleteComment = async (postId, commentId) => {
     if (!window.confirm("Are you sure you want to delete this comment?")) return;
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('comments')
       .delete()
-      .eq('id', commentId);
+      .eq('id', commentId)
+      .select();
 
     if (error) {
       console.error("Error deleting comment:", error);
-      alert("Error deleting comment");
+      alert("Error deleting comment: " + error.message);
+      return;
+    }
+    
+    // Supabase RLS silently blocks deletions by returning empty arrays if unauthorized
+    if (!data || data.length === 0) {
+      console.error("RLS blocked deleting comment.");
+      alert("Access Denied: The database blocked your deletion. If you are using a mock/legacy login, you must update your Supabase Row-Level Security Rules.");
       return;
     }
 
