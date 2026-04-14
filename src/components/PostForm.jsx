@@ -136,7 +136,7 @@ export default function PostForm({ onSubmit, editingPost, onCancel }) {
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
           {editingPost && (
             <button type="button" onClick={onCancel} disabled={isSubmitting} style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--surface-border)' }}>
              Cancel 

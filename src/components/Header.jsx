@@ -1,12 +1,61 @@
-import { useState } from 'react';
-import { PenTool, LogOut, User, Home, Sun, Moon, Menu, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { PenTool, LogOut, User, Home, Sun, Moon, Menu, X, Search } from 'lucide-react';
+import { supabase } from '../supabase';
 
 export default function Header({ currentUser, onLogout, currentView, onNavigate, theme, toggleTheme }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  
+  // reset error if current user changes
+  useEffect(() => { setImgError(false); }, [currentUser?.profilePic]);
 
-  const handleNav = (view) => {
-    onNavigate(view);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const searchUsers = async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults([]);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .ilike('name', `%${searchQuery}%`)
+        .limit(5);
+        
+      if (error) {
+        console.error("Search profiles error:", error);
+      }
+        
+      if (!error && data) {
+        setSearchResults(data);
+      }
+    };
+    
+    // Simple debounce
+    const timeoutId = setTimeout(searchUsers, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  const handleNav = (view, data = null) => {
+    onNavigate(view, data);
     setIsMobileMenuOpen(false);
+    setShowDropdown(false);
+    setSearchQuery('');
   };
 
   const handleScrollNav = (sectionId, fallbackOffset = 600) => {
@@ -71,6 +120,69 @@ export default function Header({ currentUser, onLogout, currentView, onNavigate,
 
   const renderUserActions = () => (
     <>
+      <div ref={searchRef} className="mobile-full-width" style={{ position: 'relative', display: 'flex', alignItems: 'center', marginRight: '1rem' }}>
+        <div className="mobile-full-width" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Search size={16} style={{ position: 'absolute', left: '10px', color: 'var(--text-secondary)' }} />
+          <input 
+            type="text" 
+            placeholder="Search users..." 
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true); }}
+            onKeyDown={async (e) => {
+              if (e.key === 'Enter' && searchQuery.trim() !== '') {
+                e.preventDefault();
+                setShowDropdown(false);
+
+                // Fetch directly to avoid race conditions with the debounced searchResults
+                const { data, error } = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .ilike('name', `%${searchQuery.trim()}%`)
+                  .limit(1);
+
+                if (!error && data && data.length > 0) {
+                  handleNav('publicProfile', data[0]);
+                } else {
+                  alert(`No user found for "${searchQuery}"`);
+                }
+              }
+            }}
+            onFocus={() => setShowDropdown(true)}
+            style={{ paddingLeft: '32px', paddingRight: '12px', paddingBottom: '0.5rem', paddingTop: '0.5rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--surface-border)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.875rem', width: '100%', minWidth: '200px' }}
+          />
+        </div>
+        
+        {showDropdown && searchQuery.trim() && (
+          <div style={{ position: 'absolute', top: '110%', left: 0, right: 0, backgroundColor: 'var(--surface-color)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-lg)', overflow: 'hidden', zIndex: 1000 }}>
+            {searchResults.length > 0 ? searchResults.map(user => (
+              <div 
+                key={user.id} 
+                onClick={() => handleNav('publicProfile', user)}
+                style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', borderBottom: '1px solid var(--surface-border)' }}
+                className="search-result-item"
+              >
+                <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'var(--bg-color)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', overflow: 'hidden', fontSize: '0.75rem' }}>
+                  {user.profilePic ? (
+                    <img referrerPolicy="no-referrer" src={user.profilePic} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (user.name || user.email) ? (
+                    (user.name || user.email).charAt(0).toUpperCase()
+                  ) : (
+                    <User size={14} />
+                  )}
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>{user.name || user.email?.split('@')[0]}</div>
+                </div>
+              </div>
+            )) : (
+              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                No users found.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <button 
         onClick={() => handleNav(currentView === 'home' ? 'profile' : 'home')} 
         style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 0.75rem', backgroundColor: 'var(--surface-color)', border: '1px solid var(--surface-border)', color: 'var(--text-primary)' }}
@@ -80,11 +192,17 @@ export default function Header({ currentUser, onLogout, currentView, onNavigate,
       </button>
       
       <div className="user-info" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'var(--surface-color)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', border: '2px solid var(--primary-color)', overflow: 'hidden' }}>
-          {currentUser?.profilePic ? (
-            <img src={currentUser.profilePic} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : currentUser?.name ? (
-            currentUser.name.charAt(0).toUpperCase()
+        <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'var(--surface-color)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', overflow: 'hidden' }}>
+          {currentUser?.profilePic && !imgError ? (
+            <img 
+              referrerPolicy="no-referrer"
+              src={currentUser.profilePic} 
+              alt="Profile" 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              onError={() => setImgError(true)}
+            />
+          ) : (currentUser?.name || currentUser?.email) ? (
+            (currentUser.name || currentUser.email).charAt(0).toUpperCase()
           ) : (
             <User size={18} />
           )}
@@ -125,6 +243,19 @@ export default function Header({ currentUser, onLogout, currentView, onNavigate,
             aria-label={currentView === 'home' ? 'Profile' : 'Home'}
           >
             {currentView === 'home' ? <User size={24} /> : <Home size={24} />}
+          </button>
+        )}
+        {currentUser && (
+          <button 
+            onClick={() => {
+              if (!isMobileMenuOpen) setIsMobileMenuOpen(true);
+              setTimeout(() => { if (searchRef.current) searchRef.current.querySelector('input')?.focus(); }, 100);
+            }}
+            className="btn-icon" 
+            style={{ color: 'var(--text-primary)', padding: '0.5rem' }} 
+            aria-label="Search"
+          >
+            <Search size={22} />
           </button>
         )}
         <button 

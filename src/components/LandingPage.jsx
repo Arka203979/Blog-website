@@ -142,23 +142,62 @@ export default function LandingPage({ onGetStarted }) {
 
       {/* Contact Section */}
       <section id="contact-section" style={{ marginTop: '2rem', maxWidth: '600px', margin: '2rem auto', width: '100%' }}>
-        <div className="card hover-glow" style={{ padding: '2.5rem' }}>
+        <div className="card hover-glow responsive-p-lg">
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '2rem', fontWeight: 700 }}>Get In Touch</h2>
             <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Have questions? We'd love to hear from you.</p>
           </div>
-          <form onSubmit={(e) => { e.preventDefault(); alert("Thanks for your message! Our team will get back to you soon."); e.target.reset(); }} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <form 
+            onSubmit={async (e) => { 
+              e.preventDefault(); 
+              
+              const form = e.target;
+              const formData = new FormData(form);
+              
+              // Convert FormData to JSON
+              const object = Object.fromEntries(formData);
+              object.access_key = "c5bcd002-ea1a-40dd-bd6c-2aea70461281";
+              object.subject = "New Contact from DevBlog";
+              object.from_name = "DevBlog Notifications";
+              const json = JSON.stringify(object);
+              
+              try {
+                const response = await fetch("https://api.web3forms.com/submit", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json"
+                  },
+                  body: json
+                });
+                
+                const data = await response.json();
+                
+                if (response.status === 200) {
+                  alert("Thanks for your message! Our team will get back to you soon.");
+                  form.reset();
+                } else {
+                  console.error("Web3Forms error:", data);
+                  alert("There was an error sending your message. Please try again later.");
+                }
+              } catch (error) {
+                console.error("Submission failed:", error);
+                alert("Failed to send the message. Please check your connection.");
+              }
+            }} 
+            style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+          >
             <div>
               <label htmlFor="contact-name" style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Name</label>
-              <input id="contact-name" type="text" placeholder="Your Name" required />
+              <input id="contact-name" name="name" type="text" placeholder="Your Name" required />
             </div>
             <div>
               <label htmlFor="contact-email" style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Email Address</label>
-              <input id="contact-email" type="email" placeholder="you@example.com" required />
+              <input id="contact-email" name="email" type="email" placeholder="you@example.com" required />
             </div>
             <div>
               <label htmlFor="contact-message" style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Message</label>
-              <textarea id="contact-message" placeholder="How can we help you?" required style={{ minHeight: '120px' }}></textarea>
+              <textarea id="contact-message" name="message" placeholder="How can we help you?" required style={{ minHeight: '120px' }}></textarea>
             </div>
             <button type="submit" className="btn-primary" style={{ padding: '0.75rem', fontSize: '1rem', marginTop: '0.5rem' }}>
               Send Message
