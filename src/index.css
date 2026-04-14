@@ -163,6 +163,25 @@ body {
   }
 }
 
+@media (max-width: 480px) {
+  .container {
+    padding: 1rem 0.5rem !important;
+  }
+  .card {
+    padding: 1rem !important;
+    border-radius: var(--radius-md) !important;
+  }
+  h1 {
+    font-size: 1.5rem !important;
+  }
+  h2 {
+    font-size: 1.25rem !important;
+  }
+  .header-actions {
+    gap: 0.5rem;
+  }
+}
+
 .mobile-menu-btn {
   display: none;
 }

@@ -62,7 +62,7 @@ export default function PostItem({ post, currentUser, onEdit, onDelete, onLike, 
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.5rem', paddingTop: '1rem', borderTop: '1px solid var(--surface-border)' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginTop: '0.5rem', paddingTop: '1rem', borderTop: '1px solid var(--surface-border)' }}>
         <button 
           onClick={(e) => { e.stopPropagation(); if (currentUser) onLike(post.id, hasLiked); }} 
           className="btn-icon" 
