@@ -1,6 +1,6 @@
 import PostItem from './PostItem';
 
-export default function PostList({ posts, currentUser, onEdit, onDelete }) {
+export default function PostList({ posts, currentUser, onEdit, onDelete, onLike, onComment, onRepost }) {
   if (!posts || posts.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)' }}>
@@ -19,6 +19,9 @@ export default function PostList({ posts, currentUser, onEdit, onDelete }) {
           currentUser={currentUser}
           onEdit={onEdit} 
           onDelete={onDelete} 
+          onLike={onLike}
+          onComment={onComment}
+          onRepost={onRepost}
         />
       ))}
     </div>

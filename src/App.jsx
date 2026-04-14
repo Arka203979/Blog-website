@@ -110,13 +110,24 @@ function App() {
   const fetchPosts = async () => {
     const { data, error } = await supabase
       .from('posts')
-      .select('*')
+      .select(`
+        *,
+        likes(user_id),
+        comments(*, profiles(name, profilePic)),
+        reposts(user_id)
+      `)
       .order('created_at', { ascending: false });
       
     if (error) {
       console.error("Error fetching posts:", error);
     } else {
-      setPosts(data || []);
+      const formattedPosts = (data || []).map(post => ({
+        ...post,
+        likes: post.likes || [],
+        comments: (post.comments || []).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)),
+        reposts: post.reposts || []
+      }));
+      setPosts(formattedPosts);
     }
   };
 
@@ -207,6 +218,90 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleToggleLike = async (postId, hasLiked) => {
+    if (!currentUser) return;
+    
+    setPosts(prevPosts => prevPosts.map(post => {
+      if (post.id === postId) {
+        const newLikes = hasLiked 
+          ? post.likes.filter(lk => lk.user_id !== currentUser.id)
+          : [...post.likes, { user_id: currentUser.id }];
+        return { ...post, likes: newLikes };
+      }
+      return post;
+    }));
+
+    if (hasLiked) {
+      const { error } = await supabase
+        .from('likes')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', currentUser.id);
+      if (error) console.error("Error unlike post", error);
+    } else {
+      const { error } = await supabase
+        .from('likes')
+        .insert([{ post_id: postId, user_id: currentUser.id }]);
+      if (error) console.error("Error liking post", error);
+    }
+  };
+
+  const handleAddComment = async (postId, content) => {
+    if (!currentUser || !content.trim()) return;
+
+    const newComment = {
+      post_id: postId,
+      user_id: currentUser.id,
+      content: content.trim()
+    };
+
+    const { data, error } = await supabase
+      .from('comments')
+      .insert([newComment])
+      .select('*, profiles(name, profilePic)')
+      .single();
+
+    if (error) {
+      console.error("Error adding comment", error);
+      return;
+    }
+
+    setPosts(prevPosts => prevPosts.map(post => {
+      if (post.id === postId) {
+        return { ...post, comments: [...post.comments, data] };
+      }
+      return post;
+    }));
+  };
+
+  const handleToggleRepost = async (postId, hasReposted) => {
+    if (!currentUser) return;
+
+    setPosts(prevPosts => prevPosts.map(post => {
+      if (post.id === postId) {
+        const newReposts = hasReposted 
+          ? post.reposts.filter(rp => rp.user_id !== currentUser.id)
+          : [...post.reposts, { user_id: currentUser.id }];
+        return { ...post, reposts: newReposts };
+      }
+      return post;
+    }));
+
+    if (hasReposted) {
+      const { error } = await supabase
+        .from('reposts')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', currentUser.id);
+      if (error) console.error("Error unreposting post", error);
+    } else {
+      const { error } = await supabase
+        .from('reposts')
+        .insert([{ post_id: postId, user_id: currentUser.id }]);
+      if (error) console.error("Error reposting post", error);
+    }
+  };
+
   const handleUpdateProfile = async (updatedData) => {
     const newUserObj = { ...currentUser, ...updatedData };
     
@@ -280,6 +375,9 @@ function App() {
             posts={posts} 
             onEdit={handleEditPost} 
             onDelete={handleDeletePost} 
+            onLike={handleToggleLike}
+            onComment={handleAddComment}
+            onRepost={handleToggleRepost}
             onUpdateProfile={handleUpdateProfile}
           />
 
@@ -295,6 +393,9 @@ function App() {
               currentUser={currentUser}
               onEdit={handleEditPost} 
               onDelete={handleDeletePost} 
+              onLike={handleToggleLike}
+              onComment={handleAddComment}
+              onRepost={handleToggleRepost}
             />
           </>
         )}
