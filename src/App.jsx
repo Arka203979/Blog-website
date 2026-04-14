@@ -266,9 +266,57 @@ function App() {
       return;
     }
 
-    setPosts(prevPosts => prevPosts.map(post => {
+    setPosts(prev => prev.map(post => {
       if (post.id === postId) {
-        return { ...post, comments: [...post.comments, data] };
+        return { ...post, comments: [...(post.comments || []), data] };
+      }
+      return post;
+    }));
+  };
+
+  const handleEditComment = async (postId, commentId, newContent) => {
+    const { error } = await supabase
+      .from('comments')
+      .update({ content: newContent })
+      .eq('id', commentId);
+
+    if (error) {
+      console.error("Error editing comment:", error);
+      alert("Error editing comment");
+      return;
+    }
+
+    setPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        return {
+          ...post,
+          comments: post.comments.map(c => c.id === commentId ? { ...c, content: newContent } : c)
+        };
+      }
+      return post;
+    }));
+  };
+
+  const handleDeleteComment = async (postId, commentId) => {
+    if (!window.confirm("Are you sure you want to delete this comment?")) return;
+    
+    const { error } = await supabase
+      .from('comments')
+      .delete()
+      .eq('id', commentId);
+
+    if (error) {
+      console.error("Error deleting comment:", error);
+      alert("Error deleting comment");
+      return;
+    }
+
+    setPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        return {
+          ...post,
+          comments: post.comments.filter(c => c.id !== commentId)
+        };
       }
       return post;
     }));
@@ -377,6 +425,8 @@ function App() {
             onDelete={handleDeletePost} 
             onLike={handleToggleLike}
             onComment={handleAddComment}
+            onEditComment={handleEditComment}
+            onDeleteComment={handleDeleteComment}
             onRepost={handleToggleRepost}
             onUpdateProfile={handleUpdateProfile}
           />
@@ -395,6 +445,8 @@ function App() {
               onDelete={handleDeletePost} 
               onLike={handleToggleLike}
               onComment={handleAddComment}
+              onEditComment={handleEditComment}
+              onDeleteComment={handleDeleteComment}
               onRepost={handleToggleRepost}
             />
           </>

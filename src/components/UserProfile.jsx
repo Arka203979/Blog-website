@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Mail, Calendar, Hash, Edit2, Save, X, Camera } from 'lucide-react';
 import PostList from './PostList';
 
-export default function UserProfile({ currentUser, displayedUser, posts, onEdit, onDelete, onLike, onComment, onRepost, onUpdateProfile }) {
+export default function UserProfile({ currentUser, displayedUser, posts, onEdit, onDelete, onLike, onComment, onEditComment, onDeleteComment, onRepost, onUpdateProfile }) {
   const profileUser = displayedUser || currentUser;
   const isOwnProfile = currentUser && profileUser.id === currentUser.id;
   
@@ -174,6 +174,8 @@ export default function UserProfile({ currentUser, displayedUser, posts, onEdit,
           onDelete={onDelete} 
           onLike={onLike}
           onComment={onComment}
+          onEditComment={onEditComment}
+          onDeleteComment={onDeleteComment}
           onRepost={onRepost}
         />
       </div>

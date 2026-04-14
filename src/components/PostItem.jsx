@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Edit2, Trash2, Calendar, User, Heart, MessageCircle, Repeat } from 'lucide-react';
 
-export default function PostItem({ post, currentUser, onEdit, onDelete, onLike, onComment, onRepost }) {
+export default function PostItem({ post, currentUser, onEdit, onDelete, onLike, onComment, onEditComment, onDeleteComment, onRepost }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editCommentText, setEditCommentText] = useState('');
   const formattedDate = new Date(post.created_at || post.date || new Date()).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -97,26 +99,66 @@ export default function PostItem({ post, currentUser, onEdit, onDelete, onLike, 
         <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }} onClick={(e) => e.stopPropagation()}>
           {post.comments?.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {post.comments.map(comment => (
-                <div key={comment.id} style={{ display: 'flex', gap: '0.75rem', backgroundColor: 'var(--surface-color)', padding: '0.75rem', borderRadius: '8px' }}>
-                  {comment.profiles?.profilePic ? (
-                    <img src={comment.profiles.profilePic} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} referrerPolicy="no-referrer" />
-                  ) : (
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
-                      {(comment.profiles?.name || 'A')[0]}
+              {post.comments.map(comment => {
+                const isCommentOwner = currentUser && comment.user_id === currentUser.id;
+                
+                return (
+                  <div key={comment.id} style={{ display: 'flex', gap: '0.75rem', backgroundColor: 'var(--surface-color)', padding: '0.75rem', borderRadius: '8px' }}>
+                    {comment.profiles?.profilePic ? (
+                      <img src={comment.profiles.profilePic} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} referrerPolicy="no-referrer" />
+                    ) : (
+                      <div style={{ width: '32px', height: '32px', minWidth: '32px', borderRadius: '50%', backgroundColor: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
+                        {(comment.profiles?.name || 'A')[0]}
+                      </div>
+                    )}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                        <div>
+                          <strong style={{ fontSize: '0.875rem' }}>{comment.profiles?.name || 'Anonymous'}</strong>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>
+                            {new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                        </div>
+                        {isCommentOwner && (
+                           <div style={{ display: 'flex', gap: '0.5rem' }}>
+                             <button onClick={() => { setEditingCommentId(comment.id); setEditCommentText(comment.content); }} className="btn-icon" style={{ padding: '0.25rem' }} title="Edit Comment">
+                               <Edit2 size={14} />
+                             </button>
+                             <button onClick={() => onDeleteComment(post.id, comment.id)} className="btn-icon danger" style={{ padding: '0.25rem' }} title="Delete Comment">
+                               <Trash2 size={14} />
+                             </button>
+                           </div>
+                        )}
+                      </div>
+                      
+                      {editingCommentId === comment.id ? (
+                        <form onSubmit={(e) => {
+                          e.preventDefault();
+                          onEditComment(post.id, comment.id, editCommentText);
+                          setEditingCommentId(null);
+                        }} style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                          <input 
+                            type="text" 
+                            value={editCommentText}
+                            onChange={e => setEditCommentText(e.target.value)}
+                            style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: '0.875rem' }}
+                            required
+                            autoFocus
+                          />
+                          <button type="button" onClick={() => setEditingCommentId(null)} className="btn-icon" style={{ padding: '0.5rem' }}>
+                            Cancel
+                          </button>
+                          <button type="submit" className="btn-primary" style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem' }} disabled={!editCommentText.trim()}>
+                            Save
+                          </button>
+                        </form>
+                      ) : (
+                        <p style={{ fontSize: '0.875rem', margin: 0, color: 'var(--text-secondary)' }}>{comment.content}</p>
+                      )}
                     </div>
-                  )}
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                      <strong style={{ fontSize: '0.875rem' }}>{comment.profiles?.name || 'Anonymous'}</strong>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                        {new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '0.875rem', margin: 0, color: 'var(--text-secondary)' }}>{comment.content}</p>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontStyle: 'italic', margin: 0 }}>No comments yet. Be the first!</p>
