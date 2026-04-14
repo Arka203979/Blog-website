@@ -114,16 +114,16 @@ export default function PostItem({ post, currentUser, onEdit, onDelete, onLike, 
                         {(comment.profiles?.name || 'A')[0]}
                       </div>
                     )}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                        <div>
-                          <strong style={{ fontSize: '0.875rem' }}>{comment.profiles?.name || 'Anonymous'}</strong>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
+                          <strong style={{ fontSize: '0.875rem', wordBreak: 'break-word' }}>{comment.profiles?.name || 'Anonymous'}</strong>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                             {new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </span>
                         </div>
                         {isCommentOwner && (
-                           <div style={{ display: 'flex', gap: '0.75rem', marginLeft: 'auto' }}>
+                           <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
                              <button onClick={() => { setEditingCommentId(comment.id); setEditCommentText(comment.content); }} className="btn-icon" style={{ padding: '0.25rem', color: 'var(--primary-color)' }} title="Edit Comment">
                                <Edit2 size={16} />
                              </button>
