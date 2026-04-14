@@ -113,7 +113,7 @@ function App() {
       .select(`
         *,
         likes(user_id),
-        comments(*, profiles(name, profilePic)),
+        comments(*, profiles(name)),
         reposts(user_id)
       `)
       .order('created_at', { ascending: false });
@@ -258,7 +258,7 @@ function App() {
     const { data, error } = await supabase
       .from('comments')
       .insert([newComment])
-      .select('*, profiles(name, profilePic)')
+      .select('*, profiles(name)')
       .single();
 
     if (error) {
