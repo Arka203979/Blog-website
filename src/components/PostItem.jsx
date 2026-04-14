@@ -100,7 +100,10 @@ export default function PostItem({ post, currentUser, onEdit, onDelete, onLike, 
           {post.comments?.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {post.comments.map(comment => {
-                const isCommentOwner = currentUser && (String(comment.user_id) === String(currentUser.id));
+                const isCommentOwner = currentUser && (
+                  String(comment.user_id) === String(currentUser.id) || 
+                  (comment.profiles?.name && currentUser.name && comment.profiles.name === currentUser.name)
+                );
                 
                 return (
                   <div key={comment.id} style={{ display: 'flex', gap: '0.75rem', backgroundColor: 'var(--surface-color)', padding: '0.75rem', borderRadius: '8px' }}>
